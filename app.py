@@ -10,6 +10,7 @@ from flask_cors import CORS
 from skimage import color
 from torch import nn
 
+from model.architectures.SAM_Architecture import SAM_Architecture
 from model.architectures.UnetRestNet50 import UNetResNet152
 from model.architectures.unet import Unet_model
 from model.checkpoints.checkpoints import load_checkpoint
@@ -26,10 +27,12 @@ category_dict = read_categories(CATEGORY_DICT_FILE)
 MODEL_PARAMETERS_FILE = 'model/checkpoints/checkpoint.pth.tar'
 MODEL_PRETRAINED_FILE = 'model/checkpoints/checkpoint-pretrain.pth.tar'
 MODEL_PARAMETERS_LOSS_FILE = 'model/checkpoints/checkpoint-ce_dice_loss.pth.tar'
+MODEL_SAM_FILE = 'model/checkpoints/checkpoint-sam-ce_dice_loss.pth.tar'
 DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
 # model = Unet_model().to(DEVICE)
-model = UNetResNet152(104).to(DEVICE)
-load_checkpoint(torch.load(MODEL_PRETRAINED_FILE), model)
+# model = UNetResNet152(104).to(DEVICE)
+model = SAM_Architecture(104).to(DEVICE);
+load_checkpoint(torch.load(MODEL_SAM_FILE), model)
 # load_checkpoint(torch.load(MODEL_PARAMETERS_LOSS_FILE), model)
 service = Service()
 
@@ -95,7 +98,7 @@ def get_image_content():  # put application's code here
     preds = torch.argmax(softmax(model(x)), axis=1).to('cpu')
     preds1 = np.array(preds[0, :, :])
 
-    print(aggregate_category_freq(category_dict, preds1))
+    # print(aggregate_category_freq(category_dict, preds1))
     ### play with the pixel values
 
     # masked_image, color_map = service.get_dummy_overlay_with_map()

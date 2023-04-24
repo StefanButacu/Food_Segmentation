@@ -1,5 +1,5 @@
 import colorsys
-
+import matplotlib.pyplot as plt
 import numpy as np
 from PIL import Image
 from skimage import color
@@ -15,9 +15,9 @@ class Service:
         model_type = "vit_h"
 
         device = "cpu" # TODO - get the device from as parameter
-        self.sam = sam_model_registry[model_type](checkpoint=sam_checkpoint)
-        self.sam.to(device=device)
-        self.predictor = SamPredictor(self.sam)
+        # self.sam = sam_model_registry[model_type](checkpoint=sam_checkpoint)
+        # self.sam.to(device=device)
+        # self.predictor = SamPredictor(self.sam)
 
     def get_dummy_overlay_with_map(self):
         image = Image.open('E:\Licenta_DOC\App\src\main\\resources\image\\target_python.jpg')
@@ -35,24 +35,28 @@ class Service:
 
     def get_overlay_with_map(self, image, prediction):
         overlay_heatmap, label_color_map = self.generate_colors_for_prediction(prediction)
-        overlay_photo = color.label2rgb(prediction, image, saturation=1, alpha=0.5, bg_color=None)
+        overlay_photo = self.apply_overlay_with_matplotlib(image, overlay_heatmap, label_color_map, alpha=0.52)
         overlay_photo = np.rot90(overlay_photo)
         overlay_photo = np.rot90(overlay_photo)
         overlay_photo = np.rot90(overlay_photo)
         overlay_photo = np.fliplr(overlay_photo)
-        Image.fromarray((overlay_photo * 255).astype(np.uint8)).save('actual.png')
-        return (overlay_photo * 255).astype(np.uint8).tolist(), label_color_map
+        return overlay_photo.tolist(), label_color_map
 
+    def apply_overlay_with_matplotlib(self, image, mask, label_colors, alpha=0.5):
+        overlay = np.zeros_like(image)
+        for label, color in label_colors.items():
+            overlay[mask == label] = color
+
+        blended = (1 - alpha) * image + alpha * overlay
+        return blended.astype(np.uint8)
 
     # TODO extract method remove noise
     def generate_colors_for_prediction(self, prediction):
         self.remove_noise(prediction)
-        without_zero, without_zero_counts = np.unique(prediction[prediction != 0], return_counts=True)
+        without_zero, without_zero_counts = np.unique(prediction[prediction != 0], return_counts=True) # Keep track of top aparitions
         number_of_colors = np.unique(without_zero).size
         generated_colors = self.generate_distinct_colors(number_of_colors)
 
-        # we have prediction
-        # without_zero - unique labels
         without_zero = sorted(without_zero, key=lambda el: without_zero_counts[np.where(without_zero == el)[0]][0])
 
         label_color_dict = {}
@@ -63,13 +67,10 @@ class Service:
 
     def remove_noise(self, prediction):
         total_size = prediction.shape[0] * prediction.shape[1]
-        threshold_count = total_size * 0.05
-        # TODO - create a kinda of Fill algorithm to eliminate small islands pixels
+        threshold_count = total_size * 0.02
         unique_values, counts = np.unique(prediction, return_counts=True)
         mask = unique_values[counts < threshold_count]
         prediction[np.isin(prediction, mask)] = 0
-
-    ## TODO - keep in mind that 0 label doens't need a colour
 
     def generate_distinct_colors(self, n):
         colors = []
@@ -109,14 +110,15 @@ class Service:
         return boxes
 
     def get_sam_mask(self,image, current_pred):
-        self.predictor.set_image(image)
-        input_boxes = self.get_bounding_boxes(current_pred) # Todo unpack input box T_x, T_y, B_x, B_y
-        transformed_boxes = self.predictor.transform.apply_boxes_torch(input_boxes, image.shape[:2])
-        masks, _, _ = self.predictor.predict_torch(
-            point_coords=None,
-            point_labels=None,
-            boxes=transformed_boxes,
-            multimask_output=False,
-        )
-        masks.shape  # (batch_size) x (num_predicted_masks_per_input) x H x W   # True,False
-        return masks[0]
+        pass
+        # self.predictor.set_image(image)
+        # input_boxes = self.get_bounding_boxes(current_pred) # Todo unpack input box T_x, T_y, B_x, B_y
+        # transformed_boxes = self.predictor.transform.apply_boxes_torch(input_boxes, image.shape[:2])
+        # masks, _, _ = self.predictor.predict_torch(
+        #     point_coords=None,
+        #     point_labels=None,
+        #     boxes=transformed_boxes,
+        #     multimask_output=False,
+        # )
+        # masks.shape  # (batch_size) x (num_predicted_masks_per_input) x H x W   # True,False
+        # return masks[0]

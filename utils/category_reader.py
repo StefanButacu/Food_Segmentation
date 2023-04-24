@@ -12,7 +12,7 @@ def read_categories(filename):
 
 def aggregate_category_freq(category_dict, prediction):
     fr_dict = {}
-    unique, fr_unique = np.unique(prediction)
+    unique, fr_unique = np.unique(prediction, return_counts=True)
     for key,fr in zip(unique, fr_unique):
         fr_dict[category_dict[key]] = fr_unique
     return fr_dict
