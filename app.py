@@ -1,4 +1,5 @@
 import json
+import logging
 
 import albumentations as A
 import numpy as np
@@ -31,7 +32,7 @@ MODEL_SAM_FILE = 'model/checkpoints/checkpoint-sam-ce_dice_loss.pth.tar'
 DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
 # model = Unet_model().to(DEVICE)
 # model = UNetResNet152(104).to(DEVICE)
-model = SAM_Architecture(104).to(DEVICE);
+model = SAM_Architecture(104).to(DEVICE)
 load_checkpoint(torch.load(MODEL_SAM_FILE), model)
 # load_checkpoint(torch.load(MODEL_PARAMETERS_LOSS_FILE), model)
 service = Service()
