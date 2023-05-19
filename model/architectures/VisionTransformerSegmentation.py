@@ -1,70 +1,61 @@
-# import torch
-# import torch.nn as nn
-# from torchvision.models import resnet50
-#
-# class VisionTransformerSegmentation(nn.Module):
-#     def __init__(self, vit_model, num_classes):
-#         super(VisionTransformerSegmentation, self).__init__()
-#         self.vit_model = vit_model
-#         self.vit_model.head = nn.Identity()  # Remove the classification head
-#         self.segmentation_head = nn.Conv2d(vit_model.embed_dim, num_classes, kernel_size=1)
-#         self.up_sample = nn.Upsample(scale_factor=16, mode='bilinear', align_corners=True)
-#
-#     def forward(self, x):
-#         # Extract features using the Vision Transformer
-#         features = self.vit_model(x)
-#
-#         # Reshape the features to have a spatial layout (B, C, H, W)
-#         # features = features.view(x.size(0), self.vit_model.embed_dim, 16, 16)
-#         features = features.view(8, 3, 16, 16)
-#         # Pass features through the segmentation head
-#         segmentation_map = self.segmentation_head(features)
-#
-#         # Up-sample the segmentation map to match the input image size
-#         segmentation_map = self.up_sample(segmentation_map)
-#
-#         return segmentation_map
 import torch
 import torch.nn as nn
-import timm
-from torchsummary import summary
+from timm.models import create_model
+from timm.models.vision_transformer import VisionTransformer
 
+class TransUNet(nn.Module):
+    def __init__(self, img_size, num_classes, vit_name='vit_base_patch16_224', cnn_name='resnet50', pretrained=True):
+        super(TransUNet, self).__init__()
 
-class SegmentationHead(nn.Module):
-    def __init__(self, in_channels, num_classes):
-        super(SegmentationHead, self).__init__()
-        self.conv1 = nn.Conv2d(3, 64, kernel_size=3, padding=1)
-        self.bn1 = nn.BatchNorm2d(64)
-        self.relu = nn.ReLU(inplace=True)
-        self.conv2 = nn.Conv2d(64, num_classes, kernel_size=1)
+        # CNN Backbone
+        self.cnn = create_model(cnn_name, pretrained=pretrained, features_only=True)
+
+        # Load pretrained ViT model
+        self.vit = VisionTransformer(img_size=img_size, patch_size=16, embed_dim=768, depth=12, num_heads=12, mlp_ratio=4, qkv_bias=True, num_classes=0, norm_layer=nn.LayerNorm, pretrained=pretrained)
+
+        # Decoder
+        self.decoder = nn.Sequential(
+            nn.ConvTranspose2d(768, 384, kernel_size=3, stride=2, padding=1, output_padding=1),
+            nn.ReLU(inplace=True),
+            nn.ConvTranspose2d(384, 192, kernel_size=3, stride=2, padding=1, output_padding=1),
+            nn.ReLU(inplace=True),
+            nn.ConvTranspose2d(192, 96, kernel_size=3, stride=2, padding=1, output_padding=1),
+            nn.ReLU(inplace=True),
+            nn.Conv2d(96, num_classes, kernel_size=1)
+        )
 
     def forward(self, x):
-        x = self.conv1(x)
-        x = self.bn1(x)
-        x = self.relu(x)
-        x = self.conv2(x)
+        # Get CNN backbone features
+        cnn_features = self.cnn(x)
+
+        # Transformer encoder
+        vit_output = self.vit(x)
+        vit_output = vit_output.reshape(x.shape[0], 768, 14, 14)
+
+        # Decoder with skip connections
+        x = self.decoder[0](vit_output)
+        x = self.decoder[1](x)
+
+        # Skip connection
+        x = torch.cat((x, cnn_features[3]), 1)
+
+        x = self.decoder[2](x)
+        x = self.decoder[3](x)
+
+        # Skip connection
+        x = torch.cat((x, cnn_features[2]), 1)
+
+        x = self.decoder[4](x)
+        x = self.decoder[5](x)
+
+        # Skip connection
+        x = torch.cat((x, cnn_features[1]), 1)
+
+        x = self.decoder[6](x)
+
         return x
 
-class ViTSegmentationModel(nn.Module):
-    def __init__(self, vit_model, num_classes):
-        super(ViTSegmentationModel, self).__init__()
-        self.vit = timm.create_model(vit_model, pretrained=True)
-        for param in self.vit.parameters():
-            param.requires_grad = False
-
-        self.vit.head = nn.Identity()  # Remove the classification head
-        self.segmentation_head = SegmentationHead(self.vit.embed_dim, num_classes)
-        self.interpolate = nn.Upsample(scale_factor=14, mode='bilinear', align_corners=True)
-
-    def forward(self, x):
-        features = self.vit(x)
-        features = features.view(x.shape[0], 3, 16, 16)  # batch_size x channels x W x H
-        seg_output = self.segmentation_head(features)
-        seg_output = self.interpolate(seg_output)
-        return seg_output
-
-# Instantiate the model
-num_classes = 104  # Number of classes for the segmentation task
-vit_model = "vit_base_patch16_224"  # Pre-trained ViT model name
-model = ViTSegmentationModel(vit_model, num_classes).to("cuda")
-summary(model,input_size= ( 3, 224, 224))
+# Create the TransUNet model
+img_size = 224
+num_classes = 21
+model = TransUNet(img_size=img_size, num_classes=num_classes)

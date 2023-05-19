@@ -1,5 +1,4 @@
 import json
-import logging
 
 import albumentations as A
 import numpy as np
@@ -12,11 +11,9 @@ from skimage import color
 from torch import nn
 
 from model.architectures.SAM_Architecture import SAM_Architecture
-from model.architectures.UnetRestNet50 import UNetResNet152
-from model.architectures.unet import Unet_model
-from model.checkpoints.checkpoints import load_checkpoint
+from model.checkpoints import load_checkpoint
 from service.Service import Service
-from utils.category_reader import read_categories, aggregate_category_freq
+from utils.category_reader import read_categories
 from utils.image_byte_converter import convert_byte_int
 
 app = Flask(__name__)
@@ -65,7 +62,6 @@ def get_overlay_image():
     overlay_photo = np.rot90(overlay_photo)
     overlay_photo = np.rot90(overlay_photo)
     overlay_photo = np.fliplr(overlay_photo)
-    Image.fromarray((overlay_photo * 255).astype(np.uint8)).save('overlay-photo.png')
     return jsonify({'mask': (overlay_photo * 255).astype(np.uint8).tolist()}), 200
 
 

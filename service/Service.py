@@ -10,15 +10,6 @@ from segment_anything import sam_model_registry, SamPredictor
 
 class Service:
 
-    def __init__(self):
-        sam_checkpoint = "checkpoints/sam_vit_h_4b8939.pth"
-        model_type = "vit_h"
-
-        device = "cpu" # TODO - get the device from as parameter
-        # self.sam = sam_model_registry[model_type](checkpoint=sam_checkpoint)
-        # self.sam.to(device=device)
-        # self.predictor = SamPredictor(self.sam)
-
     def get_dummy_overlay_with_map(self):
         image = Image.open('E:\Licenta_DOC\App\src\main\\resources\image\\target_python.jpg')
         image = np.array(image)
@@ -29,8 +20,6 @@ class Service:
         overlay_photo = np.rot90(overlay_photo)
         overlay_photo = np.rot90(overlay_photo)
         overlay_photo = np.fliplr(overlay_photo)
-        Image.fromarray((overlay_photo * 255).astype(np.uint8)).save('overlay-photo.png')
-        ###
         return (overlay_photo * 255).astype(np.uint8).tolist(), label_color_map
 
     def get_overlay_with_map(self, image, prediction):
