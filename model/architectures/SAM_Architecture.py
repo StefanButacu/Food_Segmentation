@@ -2,10 +2,8 @@ import torch
 import torch.nn as nn
 import sys
 
-from torchsummary import summary
 
 sys.path.append("E:\PythonModels\segment-anything")
-from segment_anything import sam_model_registry, SamPredictor, SamAutomaticMaskGenerator
 
 sys.path.append("E:\PythonModels\segment-anything\modeling")
 from segment_anything.modeling import ImageEncoderViT
