@@ -1,4 +1,5 @@
 import os
+import random
 
 import torch
 from PIL import Image
@@ -17,8 +18,9 @@ class FoodDataset(Dataset):
         for i in seg_paths:
             masks = os.listdir(i)
             self.masks.extend([i+'/'+mask for mask in masks])
-        self.images = self.images
-        self.masks = self.masks
+        # indices = random.sample(range(len(self.images)), 12000)
+        # self.images = [self.images[i] for i in indices]
+        # self.masks = [self.masks[i] for i in indices]
 
     def __len__(self):
         return len(self.images)

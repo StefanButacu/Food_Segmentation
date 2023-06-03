@@ -1,8 +1,5 @@
 import torch
 import torch.nn as nn
-import torchvision.transforms.functional as TF
-from torchsummary import summary
-from torchvision.models import resnet50, ResNet50_Weights
 from torchvision.models import resnet152, ResNet152_Weights
 class UNetBlock(nn.Module):
     def __init__(self, in_channels, mid_channels , out_channels, upsample=False):
