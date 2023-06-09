@@ -12,6 +12,8 @@ from skimage import color
 from torch import nn
 
 from model.architectures.SAM_Architecture import SAM_Architecture
+from model.architectures.UnetRestNet50 import UNetResNet152
+from model.architectures.unet import Unet_model
 from model.checkpoints import load_checkpoint
 from service.Service import Service
 from utils.category_reader import read_categories
@@ -25,17 +27,29 @@ API_KEY = 'my-secret'
 CATEGORY_DICT_FILE = 'data/category_id.txt'
 category_dict = read_categories(CATEGORY_DICT_FILE)
 
-MODEL_PARAMETERS_FILE = 'model/checkpoints/checkpoint.pth.tar'
-MODEL_PRETRAINED_FILE = 'model/checkpoints/checkpoint-pretrain.pth.tar'
-MODEL_PARAMETERS_LOSS_FILE = 'model/checkpoints/checkpoint-ce_dice_loss.pth.tar'
+MODEL_UNET_FILE = 'model/checkpoint.pth.tar'
+MODEL_UNET_CE_IOU_LOSS_FILE = 'model/checkpoint-ce_dice_loss.pth.tar'
+MODEL_RESNET_FILE = 'model/checkpoint-pretrain.pth.tar'
 MODEL_SAM_FILE = 'model/checkpoints/checkpoint-sam-ce_dice_loss.pth.tar'
 DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
 # model = Unet_model().to(DEVICE)
 # model = UNetResNet152(104).to(DEVICE)
 model = SAM_Architecture(104).to(DEVICE)
+
+
+# load_checkpoint(torch.load(MODEL_UNET_FILE), model)
+# load_checkpoint(torch.load(MODEL_UNET_CE_IOU_LOSS_FILE), model)
+# load_checkpoint(torch.load(MODEL_RESNET_FILE), model)
 load_checkpoint(torch.load(MODEL_SAM_FILE), model)
-# load_checkpoint(torch.load(MODEL_PARAMETERS_LOSS_FILE), model)
+#
 service = Service()
+t1 = A.Compose([
+    A.Resize(256, 256),
+    A.augmentations.transforms.Normalize(mean=(0.5, 0.5, 0.5), std=(0.5, 0.5, 0.5)),
+    ToTensorV2()
+])
+path_to_save_image = "E:\Licenta_DOC\App\src\main\\resources\image\\target_python.jpg"
+
 
 def require_api_key(view_function):
     @wraps(view_function)
@@ -62,46 +76,23 @@ def get_categories():
     global category_dict
     return category_dict, 200
 
-
-# @app.route('/overlay-image', methods=['GET'])
-# @require_api_key
-# def get_overlay_image():
-#     photo = np.array(Image.open('E:\Licenta_DOC\App\src\main\\resources\image\\target_python.jpg'))
-#     mask = np.random.randint(1, 4, (photo.shape[0], photo.shape[1]))
-#     mask[:300, :] = 1
-#     mask[300:, ] = 0
-#     overlay_photo = color.label2rgb(mask, photo, saturation=1, alpha=0.5, bg_color=None)
-#
-#     overlay_photo = np.rot90(overlay_photo)
-#     overlay_photo = np.rot90(overlay_photo)
-#     overlay_photo = np.rot90(overlay_photo)
-#     overlay_photo = np.fliplr(overlay_photo)
-#     return jsonify({'mask': (overlay_photo * 255).astype(np.uint8).tolist()}), 200
-
 @app.route('/image', methods=['POST'])
 @require_api_key
-def get_image_content():  # put application's code here
+def get_image_prediction():
     unsigned_bytes = extract_image_bytes(request)
-    path_to_save_image = "E:\Licenta_DOC\App\src\main\\resources\image\\target_python.jpg"
     store_image(path_to_save_image, unsigned_bytes)
     image = Image.open('%s' % path_to_save_image).resize((256,256))
+    preds = generate_prediction(image)
     image_with_tranform = np.array(image)
-    t1 = A.Compose([
-        A.Resize(256, 256),
-        A.augmentations.transforms.Normalize(mean=(0.5, 0.5, 0.5), std=(0.5, 0.5, 0.5)),
-        ToTensorV2()
-    ])
-    preds = generate_prediction(image, t1)
     masked_image, color_map = service.get_overlay_with_map(image_with_tranform, preds)
     data_str_keys = {str(key): value for key, value in color_map.items()}
     json_data = json.dumps(data_str_keys)
     return jsonify(
         {"mask": masked_image,
-        "color_map": json_data}
-    ), 200
+        "color_map": json_data}), 200
 
 
-def generate_prediction(image, t1):
+def generate_prediction(image):
     x = np.array(image)
     x = t1(image=x)['image']
     x = x.to(DEVICE)
@@ -126,6 +117,21 @@ def extract_image_bytes(request):
         return unsigned_bytes
     return []
 
+
+# @app.route('/overlay-image', methods=['GET'])
+# @require_api_key
+# def get_overlay_image():
+#     photo = np.array(Image.open('E:\Licenta_DOC\App\src\main\\resources\image\\target_python.jpg'))
+#     mask = np.random.randint(1, 4, (photo.shape[0], photo.shape[1]))
+#     mask[:300, :] = 1
+#     mask[300:, ] = 0
+#     overlay_photo = color.label2rgb(mask, photo, saturation=1, alpha=0.5, bg_color=None)
+#
+#     overlay_photo = np.rot90(overlay_photo)
+#     overlay_photo = np.rot90(overlay_photo)
+#     overlay_photo = np.rot90(overlay_photo)
+#     overlay_photo = np.fliplr(overlay_photo)
+#     return jsonify({'mask': (overlay_photo * 255).astype(np.uint8).tolist()}), 200
 
 if __name__ == '__main__':
     app.run()

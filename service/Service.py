@@ -10,17 +10,10 @@ from segment_anything import sam_model_registry, SamPredictor
 
 class Service:
 
-    def get_dummy_overlay_with_map(self):
-        image = Image.open('E:\Licenta_DOC\App\src\main\\resources\image\\target_python.jpg')
-        image = np.array(image)
-        prediction = np.random.randint(0, 5, (image.shape[0], image.shape[1]))
-        prediction, label_color_map = self.generate_colors_for_prediction(prediction)
-        overlay_photo = color.label2rgb(prediction, image, saturation=1, alpha=0.5, bg_color=None)
-        overlay_photo = np.rot90(overlay_photo)
-        overlay_photo = np.rot90(overlay_photo)
-        overlay_photo = np.rot90(overlay_photo)
-        overlay_photo = np.fliplr(overlay_photo)
-        return (overlay_photo * 255).astype(np.uint8).tolist(), label_color_map
+    def __init__(self):
+        # self.NOISE = 0.02 SAM
+        self.NOISE = 0.02
+        # self.NOISE = 0.02
 
     def get_overlay_with_map(self, image, prediction):
         overlay_heatmap, label_color_map = self.generate_colors_for_prediction(prediction)
@@ -56,7 +49,7 @@ class Service:
 
     def remove_noise(self, prediction):
         total_size = prediction.shape[0] * prediction.shape[1]
-        threshold_count = total_size * 0.02
+        threshold_count = total_size * self.NOISE
         unique_values, counts = np.unique(prediction, return_counts=True)
         mask = unique_values[counts < threshold_count]
         prediction[np.isin(prediction, mask)] = 0
