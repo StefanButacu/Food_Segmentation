@@ -1,19 +1,15 @@
 import colorsys
-import matplotlib.pyplot as plt
-import numpy as np
-from PIL import Image
-from skimage import color
-
 import sys
+
+import numpy as np
+
 sys.path.append("E:\PythonModels\segment-anything")
-from segment_anything import sam_model_registry, SamPredictor
 
 class Service:
 
     def __init__(self):
         # self.NOISE = 0.02 SAM
         self.NOISE = 0.02
-        # self.NOISE = 0.02
 
     def get_overlay_with_map(self, image, prediction):
         overlay_heatmap, label_color_map = self.generate_colors_for_prediction(prediction)
@@ -39,7 +35,6 @@ class Service:
 
         without_zero = sorted(without_zero, key=lambda el: without_zero_counts[np.where(without_zero == el)[0]][0], reverse=True)
 
-        # TODO - replace dict with something sorted
         label_color_dict = {}
         for label, generated_color in zip(without_zero, generated_colors):
             label_color_dict[label] = generated_color
@@ -55,7 +50,6 @@ class Service:
 
     def generate_distinct_colors(self, n):
         colors = []
-
         for i in range(n):
             hue = i / n
             rgb = colorsys.hls_to_rgb(hue, 0.5, 1)
@@ -80,26 +74,3 @@ class Service:
 
         return min_row, min_col, max_row, max_col
 
-    def get_bounding_boxes(self, mask):
-        boxes = []
-        self.remove_noise(mask)
-        unique_values, counts = np.unique(mask, return_counts=True)
-        for label in unique_values:
-            if label != 0:
-                min_row, min_col, max_row, max_col = self.find_bounding_box_for_label(mask, label)
-                boxes.append([label, (min_row, min_col), (max_row, max_col)])
-        return boxes
-
-    def get_sam_mask(self,image, current_pred):
-        pass
-        # self.predictor.set_image(image)
-        # input_boxes = self.get_bounding_boxes(current_pred) # Todo unpack input box T_x, T_y, B_x, B_y
-        # transformed_boxes = self.predictor.transform.apply_boxes_torch(input_boxes, image.shape[:2])
-        # masks, _, _ = self.predictor.predict_torch(
-        #     point_coords=None,
-        #     point_labels=None,
-        #     boxes=transformed_boxes,
-        #     multimask_output=False,
-        # )
-        # masks.shape  # (batch_size) x (num_predicted_masks_per_input) x H x W   # True,False
-        # return masks[0]

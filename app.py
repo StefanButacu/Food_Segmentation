@@ -33,15 +33,15 @@ MODEL_RESNET_FILE = 'model/checkpoint-pretrain.pth.tar'
 # MODEL_SAM_FILE = 'model/checkpoint-sam-ce_dice_loss.pth.tar'
 MODEL_SAM_FILE = 'model/checkpoint-sam-old.pth.tar'
 DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
-model = Unet_model().to(DEVICE)
+# model = Unet_model().to(DEVICE)
 # model = UNetResNet152(104).to(DEVICE)
-# model = SAM_Architecture(104).to(DEVICE)
+model = SAM_Architecture(104).to(DEVICE)
 
 
-load_checkpoint(torch.load(MODEL_UNET_FILE), model)
+# load_checkpoint(torch.load(MODEL_UNET_FILE), model)
 # load_checkpoint(torch.load(MODEL_UNET_CE_IOU_LOSS_FILE), model)
 # load_checkpoint(torch.load(MODEL_RESNET_FILE), model)
-# load_checkpoint(torch.load(MODEL_SAM_FILE), model)
+load_checkpoint(torch.load(MODEL_SAM_FILE), model)
 #
 service = Service()
 t1 = A.Compose([
