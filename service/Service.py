@@ -31,16 +31,15 @@ class Service:
 
         blended = (1 - alpha) * image + alpha * overlay
         return blended.astype(np.uint8)
-
-    # TODO extract method remove noise
     def generate_colors_for_prediction(self, prediction):
         self.remove_noise(prediction)
         without_zero, without_zero_counts = np.unique(prediction[prediction != 0], return_counts=True) # Keep track of top aparitions
         number_of_colors = np.unique(without_zero).size
         generated_colors = self.generate_distinct_colors(number_of_colors)
 
-        without_zero = sorted(without_zero, key=lambda el: without_zero_counts[np.where(without_zero == el)[0]][0])
+        without_zero = sorted(without_zero, key=lambda el: without_zero_counts[np.where(without_zero == el)[0]][0], reverse=True)
 
+        # TODO - replace dict with something sorted
         label_color_dict = {}
         for label, generated_color in zip(without_zero, generated_colors):
             label_color_dict[label] = generated_color

@@ -30,17 +30,18 @@ category_dict = read_categories(CATEGORY_DICT_FILE)
 MODEL_UNET_FILE = 'model/checkpoint.pth.tar'
 MODEL_UNET_CE_IOU_LOSS_FILE = 'model/checkpoint-ce_dice_loss.pth.tar'
 MODEL_RESNET_FILE = 'model/checkpoint-pretrain.pth.tar'
-MODEL_SAM_FILE = 'model/checkpoints/checkpoint-sam-ce_dice_loss.pth.tar'
+# MODEL_SAM_FILE = 'model/checkpoint-sam-ce_dice_loss.pth.tar'
+MODEL_SAM_FILE = 'model/checkpoint-sam-old.pth.tar'
 DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
-# model = Unet_model().to(DEVICE)
+model = Unet_model().to(DEVICE)
 # model = UNetResNet152(104).to(DEVICE)
-model = SAM_Architecture(104).to(DEVICE)
+# model = SAM_Architecture(104).to(DEVICE)
 
 
-# load_checkpoint(torch.load(MODEL_UNET_FILE), model)
+load_checkpoint(torch.load(MODEL_UNET_FILE), model)
 # load_checkpoint(torch.load(MODEL_UNET_CE_IOU_LOSS_FILE), model)
 # load_checkpoint(torch.load(MODEL_RESNET_FILE), model)
-load_checkpoint(torch.load(MODEL_SAM_FILE), model)
+# load_checkpoint(torch.load(MODEL_SAM_FILE), model)
 #
 service = Service()
 t1 = A.Compose([
@@ -116,22 +117,6 @@ def extract_image_bytes(request):
         unsigned_bytes = [convert_byte_int(byte) for byte in bytes]
         return unsigned_bytes
     return []
-
-
-# @app.route('/overlay-image', methods=['GET'])
-# @require_api_key
-# def get_overlay_image():
-#     photo = np.array(Image.open('E:\Licenta_DOC\App\src\main\\resources\image\\target_python.jpg'))
-#     mask = np.random.randint(1, 4, (photo.shape[0], photo.shape[1]))
-#     mask[:300, :] = 1
-#     mask[300:, ] = 0
-#     overlay_photo = color.label2rgb(mask, photo, saturation=1, alpha=0.5, bg_color=None)
-#
-#     overlay_photo = np.rot90(overlay_photo)
-#     overlay_photo = np.rot90(overlay_photo)
-#     overlay_photo = np.rot90(overlay_photo)
-#     overlay_photo = np.fliplr(overlay_photo)
-#     return jsonify({'mask': (overlay_photo * 255).astype(np.uint8).tolist()}), 200
 
 if __name__ == '__main__':
     app.run()
