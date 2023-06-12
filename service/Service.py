@@ -1,14 +1,9 @@
 import colorsys
-import sys
 
 import numpy as np
-
-sys.path.append("E:\PythonModels\segment-anything")
-
 class Service:
 
     def __init__(self):
-        # self.NOISE = 0.02 SAM
         self.NOISE = 0.02
 
     def get_overlay_with_map(self, image, prediction):
@@ -24,12 +19,11 @@ class Service:
         overlay = np.zeros_like(image)
         for label, color in label_colors.items():
             overlay[mask == label] = color
-
         blended = (1 - alpha) * image + alpha * overlay
         return blended.astype(np.uint8)
     def generate_colors_for_prediction(self, prediction):
         self.remove_noise(prediction)
-        without_zero, without_zero_counts = np.unique(prediction[prediction != 0], return_counts=True) # Keep track of top aparitions
+        without_zero, without_zero_counts = np.unique(prediction[prediction != 0], return_counts=True) # Top apparitions
         number_of_colors = np.unique(without_zero).size
         generated_colors = self.generate_distinct_colors(number_of_colors)
 
@@ -57,20 +51,4 @@ class Service:
             colors.append(rgb_255)
         return colors
 
-    def find_bounding_box_for_label(self, mask, label):
-        min_row, min_col, max_row, max_col = None, None, None, None
-        rows, cols = mask.shape
-        for row in range(rows):
-            for col in range(cols):
-                if mask[row, col] == label:
-                    if min_row is None or row < min_row:
-                        min_row = row
-                    if min_col is None or col < min_col:
-                        min_col = col
-                    if max_row is None or row > max_row:
-                        max_row = row
-                    if max_col is None or col > max_col:
-                        max_col = col
-
-        return min_row, min_col, max_row, max_col
 
