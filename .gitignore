@@ -11,4 +11,4 @@ venv
 /dataSources/
 /dataSources.local.xml
 
-/model/checkpoints/
+/model/checkpoints_old/
