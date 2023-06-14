@@ -2,9 +2,11 @@ import sys
 
 import torch.nn as nn
 
+from model.architectures.image_encoder import ImageEncoderViT
+
 sys.path.append("E:\PythonModels\segment-anything")
 sys.path.append("E:\PythonModels\segment-anything\modeling")
-from segment_anything.modeling import ImageEncoderViT
+# from segment_anything.modeling import ImageEncoderViT
 
 class SAM_Architecture(nn.Module):
     def __init__(self, num_classes):

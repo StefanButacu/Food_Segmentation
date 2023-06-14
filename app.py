@@ -1,4 +1,5 @@
 import json
+import os
 from functools import wraps
 
 import albumentations as A
@@ -6,6 +7,7 @@ import numpy as np
 import torch
 from PIL import Image
 from albumentations.pytorch import ToTensorV2
+from dotenv import load_dotenv
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 from skimage import color
@@ -18,11 +20,11 @@ from model.checkpoints import load_checkpoint
 from service.Service import Service
 from utils.category_reader import read_categories
 from utils.image_byte_converter import convert_byte_int
+load_dotenv()
 
 app = Flask(__name__)
 cors = CORS(app, resources={r"/*": {"origins": "*"}})
-API_KEY = 'my-secret'
-
+API_KEY = os.getenv("API_KEY")
 
 CATEGORY_DICT_FILE = 'data/category_id.txt'
 category_dict = read_categories(CATEGORY_DICT_FILE)
@@ -49,7 +51,7 @@ t1 = A.Compose([
     A.augmentations.transforms.Normalize(mean=(0.5, 0.5, 0.5), std=(0.5, 0.5, 0.5)),
     ToTensorV2()
 ])
-path_to_save_image = "E:\Licenta_DOC\App\src\main\\resources\image\\target_python.jpg"
+path_to_save_image = "E:\Licenta_DOC\API_Segmentation\\target_python.jpg"
 
 
 def require_api_key(view_function):
