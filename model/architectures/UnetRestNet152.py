@@ -61,18 +61,16 @@ class UNetResNet152(nn.Module):
 
         c = self.center(e5) # 2048 x 8 x 8
 
-        d5 = self.decoder5(torch.cat([c, e5], dim = 1))
-        d4 = self.decoder4(torch.cat([d5, e4], dim=1))
-        d3 = self.decoder3(torch.cat([d4, e3], dim=1))
+        d5 = self.decoder5(torch.cat([c, e5], dim = 1)) # 1024 x 16 x 16
+        d4 = self.decoder4(torch.cat([d5, e4], dim=1)) # 512 x 32 x 32
+        d3 = self.decoder3(torch.cat([d4, e3], dim=1)) # 256 x 64 x 64
         d2 = self.decoder2(torch.cat([d3, e2], dim=1))  # 128 x 128 x 128
-
         d22 = self.downsampling(d2)  # d22 = 64 x 64 x 64
-
         d1 = self.decoder1(torch.cat([d22, e1], dim=1))  #64 x 128 x 128
+        x = self.final_up(d1)  # 64 x 256 x 256
+        return self.final(x)   # 104 x 256 x 256
 
-        x = self.final_up(d1)
-        return self.final(x)
-
-
+# model = UNetResNet152(104)
+# model(torch.random(1, 3, 128, 128))
 # model = UNetResNet152(104).to("cuda")
 # print(summary(model,  (3,128, 128)))

@@ -14,7 +14,7 @@ from skimage import color
 from torch import nn
 
 from model.architectures.SAM_Architecture import SAM_Architecture
-from model.architectures.UnetRestNet50 import UNetResNet152
+from model.architectures.UnetRestNet152 import UNetResNet152
 from model.architectures.unet import Unet_model
 from model.checkpoints import load_checkpoint
 from service.Service import Service
@@ -29,7 +29,7 @@ API_KEY = os.getenv("API_KEY")
 CATEGORY_DICT_FILE = 'data/category_id.txt'
 category_dict = read_categories(CATEGORY_DICT_FILE)
 
-MODEL_UNET_FILE = 'model/checkpoint.pth.tar'
+MODEL_UNET_FILE = 'model/checkpoint-new.pth.tar'
 MODEL_UNET_CE_IOU_LOSS_FILE = 'model/checkpoint-ce_dice_loss.pth.tar'
 MODEL_RESNET_FILE = 'model/checkpoint-pretrain.pth.tar'
 # MODEL_SAM_FILE = 'model/checkpoint-sam-ce_dice_loss.pth.tar'
@@ -51,7 +51,7 @@ t1 = A.Compose([
     A.augmentations.transforms.Normalize(mean=(0.5, 0.5, 0.5), std=(0.5, 0.5, 0.5)),
     ToTensorV2()
 ])
-path_to_save_image = "E:\Licenta_DOC\API_Segmentation\\target_python.jpg"
+path_to_save_image = "./target_python.jpg"
 
 
 def require_api_key(view_function):
